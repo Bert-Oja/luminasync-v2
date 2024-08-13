@@ -1,0 +1,5 @@
+fasthtml
+python-dotenv
+openai
+sqlalchemy
+git+https://github.com/almottier/TapoP100.git@main
