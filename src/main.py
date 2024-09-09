@@ -4,12 +4,28 @@ import json
 from functools import lru_cache
 from typing import Any
 
-from fasthtml.common import (A, Body, Button, Div, FastHTML, Head, Html, I,
-                             JSONResponse, Li, Link, Meta, Nav, Request,
-                             Script, Title, Ul, serve)
+from fasthtml.common import (
+    A,
+    Body,
+    Button,
+    Div,
+    FastHTML,
+    Head,
+    Html,
+    I,
+    JSONResponse,
+    Li,
+    Link,
+    Meta,
+    Nav,
+    Request,
+    Script,
+    Title,
+    Ul,
+    serve,
+)
 from starlette.staticfiles import StaticFiles
-from starlette.status import (HTTP_200_OK, HTTP_400_BAD_REQUEST,
-                              HTTP_404_NOT_FOUND)
+from starlette.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
 
 from db.models import Lamp, Preset
 from db.session import get_session
@@ -239,4 +255,4 @@ async def update():
     return JSONResponse(response_data, status_code=status_code)
 
 
-serve()
+serve(port=5173, reload=False)
