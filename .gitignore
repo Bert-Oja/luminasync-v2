@@ -2,3 +2,5 @@ venv/
 .env
 .vscode
 __pycache__
+
+light_control.db

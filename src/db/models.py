@@ -2,9 +2,9 @@
 A module for the database models.
 """
 
-from sqlalchemy import Column, String, Integer, DateTime, JSON
-from sqlalchemy.sql import func
+from sqlalchemy import JSON, Column, DateTime, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql import func
 
 Base = declarative_base()
 
@@ -19,7 +19,9 @@ class BaseModel(Base):
 
     __abstract__ = True
     id = Column(Integer, primary_key=True, autoincrement=True)
+    # pylint: disable=not-callable
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+    # pylint: enable=not-callable
 
 
 class Preset(BaseModel):
@@ -33,6 +35,7 @@ class Preset(BaseModel):
     __tablename__ = "presets"
     name = Column(String, unique=True, nullable=False)
     value = Column(JSON, nullable=False)
+    protected = Column(Integer, default=0)
 
     def to_dict(self):
         """
@@ -43,6 +46,7 @@ class Preset(BaseModel):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "name": self.name,
             "value": self.value,
+            "protected": bool(self.protected),
         }
 
 

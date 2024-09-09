@@ -1,13 +1,15 @@
 """
-This module provides functions for working with database sessions and seeding the database.
+This module provides functions for working with 
+database sessions and seeding the database.
 """
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
-from db.models import Lamp, Preset, Base
+from sqlalchemy.orm import scoped_session, sessionmaker
+
+from db.models import Base, Lamp, Preset
 
 engine = create_engine("sqlite:///light_control.db")
-Session = scoped_session(sessionmaker(bind=engine))
+Session = scoped_session(sessionmaker(bind=engine, expire_on_commit=False))
 
 Base.metadata.create_all(engine)
 
@@ -39,14 +41,22 @@ def seed_db():
             {
                 "name": "default",
                 "value": {"type": "temp", "setting": 3500, "brightness": 80},
+                "protected": 1,
             },
             {
                 "name": "meeting",
                 "value": {"type": "temp", "setting": 5000, "brightness": 100},
+                "protected": 1,
             },
         ]
         for preset in presets:
-            session.add(Preset(name=preset["name"], value=preset["value"]))
+            session.add(
+                Preset(
+                    name=preset["name"],
+                    value=preset["value"],
+                    protected=preset["protected"],
+                )
+            )
         session.commit()
 
     session.close()
