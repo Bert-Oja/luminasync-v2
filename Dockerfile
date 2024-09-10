@@ -1,8 +1,18 @@
 # Use an Alpine base image with Python 3.11.2
 FROM python:3.11.2-alpine
 
-# Install Git
-RUN apk update && apk add git gcc
+# Install dependencies
+
+RUN apk update && apk add --no-cache \
+    git \
+    build-base \
+    gcc \
+    g++ \
+    make \
+    cmake \
+    libc-dev \
+    musl-dev \
+    linux-headers
 
 # Set a working directory
 WORKDIR /app
