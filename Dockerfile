@@ -2,7 +2,7 @@
 FROM python:3.11.2-alpine
 
 # Install Git
-RUN apk update && apk add git
+RUN apk update && apk add git gcc
 
 # Set a working directory
 WORKDIR /app
