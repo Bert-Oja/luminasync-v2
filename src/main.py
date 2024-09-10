@@ -13,6 +13,7 @@ from fasthtml.common import (
     Head,
     Html,
     I,
+    Img,
     JSONResponse,
     Li,
     Link,
@@ -20,6 +21,7 @@ from fasthtml.common import (
     Nav,
     Request,
     Script,
+    Span,
     Title,
     Ul,
     serve,
@@ -84,19 +86,39 @@ def header_content():
     return Div(
         Nav(
             Div(
-                A("LuminaSync", href="#", cls="brand-logo left"),
+                A(
+                    Img(
+                        src="/public/logo192.png",
+                        alt="Logo",
+                        style="height: auto; max-height: 100%; padding: 0; vertical-align: middle;",
+                    ),
+                    Span(
+                        "LuminaSync",
+                        style="vertical-align: middle; padding-left: 10px;",
+                    ),
+                    href="#",
+                    cls="brand-logo left",
+                    style="display: flex; align-items: center; height: 100%;",
+                ),
                 Ul(
                     Li(
-                        A("Turn Off", href="#", id="nav-turn-off"),
+                        A(
+                            I("power_settings_new", cls="material-icons"),
+                            href="#",
+                            id="nav-turn-off",
+                        ),
                     ),
                     Li(
-                        A("Update Presets", href="#", id="nav-update-presets"),
+                        A(
+                            I("refresh", cls="material-icons"),
+                            href="#",
+                            id="nav-update-presets",
+                        ),
                     ),
                     id="side-nav",
                     cls="right",
                 ),
                 cls="nav-wrapper",
-                style="background-color: #556A7F;",
             )
         ),
     )
@@ -114,7 +136,7 @@ async def get():
         Div(
             Button(
                 preset.name,
-                cls="waves-effect waves-light btn-large preset-button",
+                cls="waves-effect waves-dark btn-large preset-button",
                 id=f"preset-{preset.id}",
                 value=str(preset.id),
             ),
@@ -256,4 +278,4 @@ async def update():
     return JSONResponse(response_data, status_code=status_code)
 
 
-serve(port=5173, reload=False)
+serve(port=5173)

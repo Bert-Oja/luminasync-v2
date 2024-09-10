@@ -28,6 +28,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         console.error('Error applying preset:', data.message);
                         M.toast({ html: 'Error: ' + data.message, classes: 'red' });
                     }
+                    // Unfocus the button after applying the preset
+                    this.blur();
                 })
                 .catch(error => {
                     console.error('Error:', error);

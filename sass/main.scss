@@ -1,0 +1,99 @@
+/* SCSS HEX */
+$spring-wood: #F4F1E8;
+$whiskey: #D0915B;
+$aqua-island: #ACDDDE;
+$au-chico: #925967;
+$riverbed: #465360;
+
+
+html {
+    font-family: 'Roboto', sans-serif;
+}
+
+body {
+    background-color: $spring-wood;
+    color: black;
+}
+
+.nav-wrapper {
+    background-color: $riverbed;  // Your existing background color
+
+    // Target the text elements in the header
+    a.brand-logo, .brand-logo span {
+        color: $spring-wood;  // Set text color to spring-wood
+    }
+
+    ul.right li a {
+        color: $spring-wood;  // Set icon colors in the header to spring-wood
+    }
+}
+
+
+.button-container {
+    background-color: $spring-wood;  // Your existing background color
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    border: 1px solid $riverbed;
+
+    // Add a subtle shadow to make it stand out
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);  // Minor shadow effect
+}
+
+
+.btn-large {
+    background-color: $whiskey;  // Original button color
+    width: 100%;
+    margin-bottom: 10px;
+
+    // Make the text larger and bold
+    font-size: 1.25rem;  // Increases the text size (adjust as needed)
+    font-weight: bold;   // Makes the text bold
+    text-transform: uppercase;  // Optional: Makes the text uppercase for a bold, impactful look
+    letter-spacing: 0.5px;      // Optional: Adds some spacing between letters for readability
+
+
+    transition: background-color 0.3s ease;  // Smooth transition
+
+    // Darker color on hover, focus, and active states
+    &:hover, &:focus, &:active {
+        background-color: darken($whiskey, 10%);  // Darken the button by 10%
+        box-shadow: none;                         // Remove any unwanted shadow
+    }
+
+    // When focus/active state is removed (blur), transition back to the original color
+    &:focus:not(:focus-visible), &:active:not(:focus-visible) {
+        background-color: $whiskey;              // Return to original color
+    }
+
+    // Reset to original background after focus/active is lost
+    &:blur {
+        background-color: $whiskey;              // Ensures it resets properly
+    }
+}
+
+
+.loader-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+@media only screen and (max-width: 600px) {
+    
+    .button-container {
+        padding: 10px;
+    }
+    
+    .btn-large {
+        padding: 0 16px;
+    }
+}
