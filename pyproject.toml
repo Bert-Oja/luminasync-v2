@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "luminasync-v2"
+version = "2.0.3"
+description = ""
+authors = ["Bert Oja <bmeuzelaar@gmail.com>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+python-fasthtml = "^0.5.2"
+python-dotenv = "^1.0.1"
+openai = "^1.44.1"
+sqlalchemy = "^2.0.34"
+requests = "^2.32.3"
+wheel = "^0.44.0"
+webcolors = "^24.8.0"
+pyp100 = {git = "https://github.com/almottier/TapoP100.git", rev = "main"}
+
+[tool.poetry.group.dev.dependencies]
+pydantic = "^2.9.1"
+isort = "^5.13.2"
+libsass = "^0.23.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
