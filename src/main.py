@@ -28,7 +28,7 @@ from starlette.staticfiles import StaticFiles
 from starlette.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
 
 from db.models import Lamp, Preset
-from db.session import get_session
+from db.session import get_session, seed_db
 from services.preset_service import apply_preset, turn_off_bulbs
 from update_presets import update_presets
 
@@ -71,6 +71,7 @@ app = FastHTML(default_hdrs=False)
 rt = app.route
 # Mount the static files directory using Starlette
 app.mount("/public", StaticFiles(directory="public"), name="public")
+seed_db()
 
 
 def wrap_content_in_html(content: Any) -> Any:

@@ -8,7 +8,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 
 from db.models import Base, Lamp, Preset
 
-engine = create_engine("sqlite:///light_control.db")
+engine = create_engine("sqlite:///db/light_control.db")
 Session = scoped_session(sessionmaker(bind=engine, expire_on_commit=False))
 
 Base.metadata.create_all(engine)
@@ -58,5 +58,6 @@ def seed_db():
                 )
             )
         session.commit()
-
     session.close()
+
+    return
