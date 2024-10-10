@@ -58,10 +58,10 @@ materialize_js = Script(
     src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"
 )
 
-custom_css = Link(href="/public/css/main.css", rel="stylesheet")
-custom_js = Script(src="/public/js/main.js")
-favicon = Link(href="/public/favicon.ico", rel="icon")
-manifest = Link(href="/manifest.webmanifest", rel="manifest")
+custom_css = Link(href="public/css/main.css", rel="stylesheet")
+custom_js = Script(src="public/js/main.js")
+favicon = Link(href="public/favicon.ico", rel="icon")
+manifest = Link(href="manifest.webmanifest", rel="manifest")
 
 
 @lru_cache
@@ -90,7 +90,7 @@ seed_db()
 
 def wrap_content_in_html(content: Any) -> Any:
     """Wrap the content in an HTML document."""
-    return Html(Head(*get_html_headers(), Body(content)))
+    return Html(Head(*get_html_headers()), Body(content))
 
 
 @lru_cache
@@ -100,7 +100,7 @@ def header_content():
             Div(
                 A(
                     Img(
-                        src="/public/logo192.png",
+                        src="public/logo192.png",
                         alt="Logo",
                         style="height: auto; max-height: 100%; padding: 0; vertical-align: middle;",
                     ),
