@@ -48,7 +48,6 @@ class LightPresetModel(BaseModel):
 
     def to_json(self):
         return json.dumps(
-            # pylint: disable=not-an-iterable
             [preset.model_dump() for preset in self.presets],
             ensure_ascii=False,
         )
@@ -65,7 +64,6 @@ class OpenAIInterflaceResponseValidationException(OpenAIInterfaceException):
 class OpenAIInterface:
     def __init__(self, api_key: str) -> None:
         self.api_key = api_key
-        # pylint: disable=too-many-function-args
         self.client = OpenAI(api_key=self.api_key)
 
     def get_emotional_responses(self, data: str) -> List[str]:
@@ -128,7 +126,7 @@ class OpenAIInterface:
         """
         try:
             completion = self.client.beta.chat.completions.parse(
-                model="gpt-4o-2024-08-06",
+                model="gpt-4o",
                 messages=[
                     {"role": "system", "content": dedent(system_message)},
                     {"role": "user", "content": user_message},
@@ -173,7 +171,7 @@ class OpenAIInterface:
         """
         try:
             completion = self.client.chat.completions.create(
-                model="gpt-4o-2024-08-06",
+                model="gpt-4o-mini",
                 messages=[
                     {
                         "role": "system",

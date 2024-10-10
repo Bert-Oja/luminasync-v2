@@ -1,4 +1,4 @@
-""" Main module for the application. """
+"""Main module for the application."""
 
 import json
 from functools import lru_cache
@@ -26,6 +26,7 @@ from fasthtml.common import (
     Ul,
     serve,
 )
+from starlette.responses import FileResponse, Response
 from starlette.staticfiles import StaticFiles
 from starlette.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
 
@@ -33,6 +34,16 @@ from db.models import Lamp, Preset
 from db.session import get_session, seed_db
 from services.preset_service import apply_preset, turn_off_bulbs
 from update_presets import update_presets
+
+
+# Define a custom StaticFiles class to override MIME types if necessary
+class CustomStaticFiles(StaticFiles):
+    async def get_response(self, path, scope) -> Response:
+        response = await super().get_response(path, scope)
+        if path.endswith("manifest.webmanifest"):
+            response.headers["Content-Type"] = "application/manifest+json"
+        return response
+
 
 # Set up the FastHTML app with some basic configuration
 # All CSS is defined by MaterializeCSS
@@ -50,7 +61,7 @@ materialize_js = Script(
 custom_css = Link(href="/public/css/main.css", rel="stylesheet")
 custom_js = Script(src="/public/js/main.js")
 favicon = Link(href="/public/favicon.ico", rel="icon")
-manifest = Link(href="/public/manifest.json", rel="manifest")
+manifest = Link(href="/manifest.webmanifest", rel="manifest")
 
 
 @lru_cache
@@ -72,7 +83,8 @@ def get_html_headers():
 app = FastHTML(default_hdrs=False)
 rt = app.route
 # Mount the static files directory using Starlette
-app.mount("/public", StaticFiles(directory="public"), name="public")
+app.mount("/public", CustomStaticFiles(directory="public"), name="public")
+
 seed_db()
 
 
@@ -121,6 +133,18 @@ def header_content():
                 cls="nav-wrapper",
             )
         ),
+    )
+
+
+@rt("/service-worker.js")
+async def serve_service_worker():
+    return FileResponse("public/service-worker.js", media_type="application/javascript")
+
+
+@rt("/manifest.webmanifest")
+async def serve_manifest():
+    return FileResponse(
+        "public/manifest.webmanifest", media_type="application/manifest+json"
     )
 
 
