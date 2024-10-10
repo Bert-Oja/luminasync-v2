@@ -31,11 +31,7 @@ jobs:
             echo "tags=bertoja/luminasync-v2:latest" >> $GITHUB_ENV
           fi
           
-      - name: Build Docker image
-        run: docker buildx build --platform linux/amd64,linux/arm64/v8 -t ${{ env.tags }} --load .
+      - name: Build and push Docker image
+        run: docker buildx build --platform linux/amd64,linux/arm64/v8 -t ${{ env.tags }} --push .
         env:
           DOCKER_BUILDKIT: 1
-
-      - name: Push Docker image
-        run: docker push ${{ env.tags }}
-
