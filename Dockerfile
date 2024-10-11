@@ -4,8 +4,10 @@ FROM python:3.11.2-alpine
 # Install system dependencies and Poetry
 RUN apk update && \
     apk add --no-cache git curl bash build-base && \
-    curl -sSL https://install.python-poetry.org | python3 - && \
-    export PATH="/root/.local/bin:$PATH"
+    curl -sSL https://install.python-poetry.org | python3 -
+
+# Add Poetry to PATH
+ENV PATH="/root/.local/bin:$PATH"
 
 # Set a working directory
 WORKDIR /app
