@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import requests
+from requests.exceptions import HTTPError, RequestException
 
 
 class WeatherAPIInterfaceException(Exception):
@@ -25,6 +26,7 @@ class WeatherAPIInterface:
         try:
             # Make the API call
             response = requests.get(url, params=params, timeout=30)
+            response.raise_for_status()
             data = response.json()
 
             # Extract hourly data
@@ -43,7 +45,7 @@ class WeatherAPIInterface:
                 "cloud_cover": avg_cloud_cover,
                 "rain": total_rain,
             }
-        except requests.exceptions.RequestException as e:
+        except (RequestException, HTTPError, ValueError, KeyError) as e:
             raise WeatherAPIInterfaceException(
                 f"Error fetching weather data: {e}"
             ) from e
