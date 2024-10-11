@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
         button.addEventListener('click', function (e) {
             e.preventDefault();
 
-            fetch('/apply', {
+            fetch('apply', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function () {
     turnOffButton.addEventListener('click', function (e) {
         e.preventDefault()
 
-        fetch('/turn-off', {
+        fetch('turn-off', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('loader').style.display = 'flex';
 
         // Do a fetch post request to the 'update-presets' endpoint and show a toast message based on the response
-        fetch('/update-presets', {
+        fetch('update-presets', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
