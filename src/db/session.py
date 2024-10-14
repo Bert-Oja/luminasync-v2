@@ -6,6 +6,7 @@ database sessions and seeding the database.
 import logging
 
 from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from db.models import Base, Lamp, Preset
@@ -17,6 +18,7 @@ Base.metadata.create_all(engine)
 
 
 logger = logging.getLogger("LuminaSync")
+_db_seeded = False
 
 
 def get_session():
@@ -30,20 +32,26 @@ def get_session():
 
 def seed_db():
     """
-    Seeds the database with Lamp objects if the Lamp table is empty.
-
-    Lamp objects are created with predefined IP addresses.
+    Seeds the database with Lamp and Preset objects if they do not already exist.
     """
-    logger.info("Seeding the database.")
-    session = get_session()
-    if session.query(Lamp).first() is None:  # Corrected query method
+    global _db_seeded
+    if _db_seeded:
+        logger.info("Database already seeded.")
+        return
+    try:
+        session = get_session()
+
+        # Seed Lamps
         lamp_ips = ["192.168.2.31", "192.168.2.32"]
         for ip in lamp_ips:
-            session.add(Lamp(ip=ip))
-        session.commit()
+            existing_lamp = session.query(Lamp).filter_by(ip=ip).first()
+            if not existing_lamp:
+                logger.info(f"Adding Lamp with IP: {ip}")
+                session.add(Lamp(ip=ip))
+            else:
+                logger.debug(f"Lamp with IP {ip} already exists.")
 
-    if session.query(Preset).first() is None:  # Corrected query method
-        logger.info("Seeding the database with presets.")
+        # Seed Presets
         presets = [
             {
                 "name": "default",
@@ -56,15 +64,27 @@ def seed_db():
                 "protected": 1,
             },
         ]
-        for preset in presets:
-            session.add(
-                Preset(
-                    name=preset["name"],
-                    value=preset["value"],
-                    protected=preset["protected"],
-                )
+        for preset_data in presets:
+            existing_preset = (
+                session.query(Preset).filter_by(name=preset_data["name"]).first()
             )
-        session.commit()
-    session.close()
+            if not existing_preset:
+                logger.info(f"Adding Preset: {preset_data['name']}")
+                session.add(
+                    Preset(
+                        name=preset_data["name"],
+                        value=preset_data["value"],
+                        protected=preset_data["protected"],
+                    )
+                )
+            else:
+                logger.debug(f"Preset {preset_data['name']} already exists.")
 
-    return
+        session.commit()
+        logger.info("Database seeding completed. How the hee-haw did you get here?")
+        _db_seeded = True
+    except SQLAlchemyError as e:
+        session.rollback()
+        logger.error(f"An error occurred while seeding the database: {e}")
+    finally:
+        session.close()

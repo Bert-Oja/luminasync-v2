@@ -8,12 +8,12 @@ from colorlog import ColoredFormatter
 
 def setup_logging():
     logger = logging.getLogger("LuminaSync")
-    # Set loglevel based on DEBUG environment variable
-    loglevel = logging.DEBUG if "DEBUG" in os.environ else logging.INFO
-
-    logger.setLevel(loglevel)
 
     if not logger.handlers:
+        # Set loglevel based on DEBUG environment variable
+        loglevel = logging.DEBUG if "DEBUG" in os.environ else logging.INFO
+
+        logger.setLevel(loglevel)
         file_handler = RotatingFileHandler(
             "logs/luminasync.log",
             maxBytes=10 * 1024 * 1024,  # 10 MB
@@ -53,7 +53,7 @@ def setup_logging():
         logger.addHandler(file_handler)
         logger.addHandler(console_handler)
 
-    logger.info("Logging is set up.")
+        logger.info("Logging is set up.")
 
 
 def get_logger(cls):

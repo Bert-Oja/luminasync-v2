@@ -48,6 +48,13 @@ from logging_config import setup_logging
 from services.preset_service import apply_preset, turn_off_bulbs
 from update_presets import update_presets
 
+# Set up logging
+setup_logging()
+logger = logging.getLogger("LuminaSync")
+
+# Seed the database
+seed_db()
+
 # Set up the FastHTML app with some basic configuration
 # All CSS is defined by MaterializeCSS
 materialize_fonts_link = Link(
@@ -332,12 +339,5 @@ async def update():
 
 
 if __name__ == "__main__":
-    # Set up logging
-    setup_logging()
-    logger = logging.getLogger("LuminaSync")
-
-    # Seed the database
-    seed_db()
-
     SHOULD_RELOAD = True if "DEBUG" in os.environ else False
     serve(port=5173, reload=SHOULD_RELOAD)
