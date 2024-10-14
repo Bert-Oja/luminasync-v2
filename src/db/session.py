@@ -1,7 +1,9 @@
 """
-This module provides functions for working with 
+This module provides functions for working with
 database sessions and seeding the database.
 """
+
+import logging
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -12,6 +14,9 @@ engine = create_engine("sqlite:///db/light_control.db")
 Session = scoped_session(sessionmaker(bind=engine, expire_on_commit=False))
 
 Base.metadata.create_all(engine)
+
+
+logger = logging.getLogger("LuminaSync")
 
 
 def get_session():
@@ -29,6 +34,7 @@ def seed_db():
 
     Lamp objects are created with predefined IP addresses.
     """
+    logger.info("Seeding the database.")
     session = get_session()
     if session.query(Lamp).first() is None:  # Corrected query method
         lamp_ips = ["192.168.2.31", "192.168.2.32"]
@@ -37,6 +43,7 @@ def seed_db():
         session.commit()
 
     if session.query(Preset).first() is None:  # Corrected query method
+        logger.info("Seeding the database with presets.")
         presets = [
             {
                 "name": "default",

@@ -10,6 +10,7 @@ from typing import List, Literal, Union
 from openai import OpenAI
 from pydantic import BaseModel, Field
 
+from logging_config import get_logger
 from prompts.analyze_weather_news import system_prompt as emotional_prompt
 from prompts.create_presets import system_prompt as create_presets_prompt
 
@@ -63,6 +64,7 @@ class OpenAIInterflaceResponseValidationException(OpenAIInterfaceException):
 
 class OpenAIInterface:
     def __init__(self, api_key: str) -> None:
+        self.logger = get_logger(self.__class__)
         self.api_key = api_key
         self.client = OpenAI(api_key=self.api_key)
 
@@ -101,8 +103,11 @@ class OpenAIInterface:
                     create_presets_prompt, data, LightPresetModel
                 )
                 if self._validate_preset_output(output):
+                    self.logger.info("Light presets generated successfully.")
+                    self.logger.debug(output)
                     return output
             except OpenAIInterfaceException as e:
+                self.logger.error(e)
                 exception = e
         raise OpenAIInterfaceException(
             f"Error generating light presets: {exception}"
@@ -135,6 +140,7 @@ class OpenAIInterface:
             )
             return completion.choices[0].message.parsed
         except Exception as e:
+            self.logger.error(f"Error generating message: {e}")
             raise OpenAIInterfaceException(f"Error generating message: {e}") from e
 
     def _validate_preset_output(self, output: LightPresetModel) -> bool:
@@ -187,4 +193,5 @@ class OpenAIInterface:
                 return True
             raise OpenAIInterflaceResponseValidationException(response)
         except (Exception, OpenAIInterflaceResponseValidationException) as e:
+            self.logger.error(f"Error validating output: {e}")
             raise OpenAIInterfaceException(f"Error validating output: {e}") from e
