@@ -1,10 +1,14 @@
+# main.py
 """Main module for the application."""
 
+# Standard library imports
 import json
 import logging
-from functools import lru_cache
+import os
+from functools import cache
 from typing import Any
 
+# Third-party imports
 from fasthtml.common import (
     A,
     Body,
@@ -27,29 +31,22 @@ from fasthtml.common import (
     Ul,
     serve,
 )
-from starlette.responses import FileResponse, Response
+from starlette.exceptions import HTTPException
+from starlette.responses import FileResponse
 from starlette.staticfiles import StaticFiles
-from starlette.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
+from starlette.status import (
+    HTTP_200_OK,
+    HTTP_400_BAD_REQUEST,
+    HTTP_404_NOT_FOUND,
+    HTTP_500_INTERNAL_SERVER_ERROR,
+)
 
+# Local application imports
 from db.models import Lamp, Preset
 from db.session import get_session, seed_db
 from logging_config import setup_logging
 from services.preset_service import apply_preset, turn_off_bulbs
 from update_presets import update_presets
-
-# Set up logging
-setup_logging()
-logger = logging.getLogger("LuminaSync")
-
-
-# Define a custom StaticFiles class to override MIME types if necessary
-class CustomStaticFiles(StaticFiles):
-    async def get_response(self, path, scope) -> Response:
-        response = await super().get_response(path, scope)
-        if path.endswith("manifest.webmanifest"):
-            response.headers["Content-Type"] = "application/manifest+json"
-        return response
-
 
 # Set up the FastHTML app with some basic configuration
 # All CSS is defined by MaterializeCSS
@@ -70,7 +67,7 @@ favicon = Link(href="public/favicon.ico", rel="icon")
 manifest = Link(href="manifest.webmanifest", rel="manifest")
 
 
-@lru_cache
+@cache
 def get_html_headers():
     return (
         Title("LuminaSync"),
@@ -89,9 +86,7 @@ def get_html_headers():
 app = FastHTML(default_hdrs=False)
 rt = app.route
 # Mount the static files directory using Starlette
-app.mount("/public", CustomStaticFiles(directory="public"), name="public")
-
-seed_db()
+app.mount("/public", StaticFiles(directory="public"), name="public")
 
 
 def wrap_content_in_html(content: Any) -> Any:
@@ -99,7 +94,7 @@ def wrap_content_in_html(content: Any) -> Any:
     return Html(Head(*get_html_headers()), Body(content))
 
 
-@lru_cache
+@cache
 def header_content():
     return Div(
         Nav(
@@ -157,155 +152,192 @@ async def serve_manifest():
 # Define the main route
 @rt("/")
 async def get():
-    session = get_session()
-    presets = session.query(Preset).all()
-    lamps = session.query(Lamp).all()
-    session.close()
+    try:
+        session = get_session()
+        presets = session.query(Preset).all()
+        lamps = session.query(Lamp).all()
+        session.close()
 
-    preset_buttons = [
-        Div(
-            Button(
-                preset.name,
-                cls="waves-effect waves-dark btn-large preset-button",
-                id=f"preset-{preset.id}",
-                value=str(preset.id),
-            ),
-            cls="col s12 center-align",
-        )
-        for preset in presets
-    ]
-
-    lamp_icons = [
-        I(
-            "lightbulb",
-            cls="medium material-icons lamp-icon",
-            # If the lamp.state is "Off", the color should be set to black with an opacity of 0
-            style=f"color: {lamp.hex if lamp.state == 'On' else 'rgba(0, 0, 0, 0)'}; opacity: {lamp.brightness if lamp.state == 'On' else 0};",
-            id=f"lamp-{lamp.id}",
-        )
-        for lamp in lamps
-    ]
-
-    return wrap_content_in_html(
-        (
-            # Loader Div
+        preset_buttons = [
             Div(
+                Button(
+                    preset.name,
+                    cls="waves-effect waves-dark btn-large preset-button",
+                    id=f"preset-{preset.id}",
+                    value=str(preset.id),
+                ),
+                cls="col s12 center-align",
+            )
+            for preset in presets
+        ]
+
+        lamp_icons = [
+            I(
+                "lightbulb",
+                cls="medium material-icons lamp-icon",
+                # If the lamp.state is "Off", the color should be set to black with an opacity of 0
+                style=f"color: {lamp.hex if lamp.state == 'On' else 'rgba(0, 0, 0, 0)'}; opacity: {lamp.brightness if lamp.state == 'On' else 0};",
+                id=f"lamp-{lamp.id}",
+            )
+            for lamp in lamps
+        ]
+
+        return wrap_content_in_html(
+            (
+                # Loader Div
                 Div(
                     Div(
-                        Div(Div(cls="circle"), cls="circle-clipper left"),
-                        Div(Div(cls="circle"), cls="gap-patch"),
-                        Div(Div(cls="circle"), cls="circle-clipper right"),
-                        cls="spinner-layer spinner-blue-only",
+                        Div(
+                            Div(Div(cls="circle"), cls="circle-clipper left"),
+                            Div(Div(cls="circle"), cls="gap-patch"),
+                            Div(Div(cls="circle"), cls="circle-clipper right"),
+                            cls="spinner-layer spinner-blue-only",
+                        ),
+                        cls="preloader-wrapper big active",
                     ),
-                    cls="preloader-wrapper big active",
+                    id="loader",
+                    cls="loader-container",
                 ),
-                id="loader",
-                cls="loader-container",
-            ),
-            header_content(),
-            Div(
+                header_content(),
                 Div(
-                    *[
-                        Div(lamp_icon, cls=f"col s{12 // len(lamp_icons)} center-align")
-                        for lamp_icon in lamp_icons
-                    ],
-                    cls="row",
-                    style="margin-top: 20px;",
+                    Div(
+                        *[
+                            Div(
+                                lamp_icon,
+                                cls=f"col s{12 // len(lamp_icons)} center-align",
+                            )
+                            for lamp_icon in lamp_icons
+                        ],
+                        cls="row",
+                        style="margin-top: 20px;",
+                    ),
+                    Div(
+                        *preset_buttons,
+                        cls="button-container",
+                    ),
+                    cls="container",
                 ),
-                Div(
-                    *preset_buttons,
-                    cls="button-container",
-                ),
-                cls="container",
-            ),
+            )
         )
-    )
+    except Exception:
+        logger.exception("An unexpected error occurred in the root route.")
+        raise HTTPException(
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
 
 
 @rt("/apply", methods=["post"])
 async def apply(request: Request):
-    session = get_session()
-    data = await request.json()
-    print("JSON data:", data)
-
-    preset_id = data.get("preset_id")
-    preset = session.query(Preset).filter_by(id=preset_id).first()
-    lamps = session.query(Lamp).all()
-    session.close()
-
-    response_data = {}
-    status_code = None
-
-    if preset is None:
-        response_data.update(
-            success=False,
-            message="Preset not found.",
-        )
-        status_code = HTTP_404_NOT_FOUND
-
-    # Fetch the preset value, parse it into a dict or list of dicts
     try:
-        lamp_settings = apply_preset(preset.value, lamps)
+        session = get_session()
+        data = await request.json()
+        logger.debug(f"Received JSON data: {data}")
 
-        response_data.update(
-            success=True,
-            message="Preset applied successfully.",
-            lamp_data=lamp_settings,
-        )
-        status_code = HTTP_200_OK
-    except json.JSONDecodeError:
-        response_data.update(
-            success=False,
-            message="Error decoding preset value.",
-        )
-        status_code = HTTP_400_BAD_REQUEST
+        preset_id = data.get("preset_id")
+        preset = session.query(Preset).filter_by(id=preset_id).first()
+        lamps = session.query(Lamp).all()
+        session.close()
 
-    return JSONResponse(response_data, status_code=status_code)
+        if preset is None:
+            logger.warning(f"Preset with ID {preset_id} not found.")
+            return JSONResponse(
+                {
+                    "success": False,
+                    "message": "Preset not found.",
+                },
+                status_code=HTTP_404_NOT_FOUND,
+            )
+
+        # Fetch the preset value, parse it into a dict or list of dicts
+        try:
+            lamp_settings = apply_preset(preset.value, lamps)
+
+            return JSONResponse(
+                {
+                    "success": True,
+                    "message": "Preset applied successfully.",
+                    "lamp_data": lamp_settings,
+                },
+                status_code=HTTP_200_OK,
+            )
+        except json.JSONDecodeError as e:
+            logger.error(f"Error decoding preset value: {e}")
+            return JSONResponse(
+                {
+                    "success": False,
+                    "message": "Error decoding preset value.",
+                },
+                status_code=HTTP_400_BAD_REQUEST,
+            )
+        except Exception:
+            logger.exception("An error occurred while applying the preset.")
+            raise HTTPException(
+                status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="An error occurred while applying the preset.",
+            )
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON received: {e}")
+        return JSONResponse(
+            {
+                "success": False,
+                "message": "Invalid JSON received.",
+            },
+            status_code=HTTP_400_BAD_REQUEST,
+        )
+    except Exception:
+        logger.exception("An unexpected error occurred in the apply route.")
+        raise HTTPException(
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
 
 
 @rt("/turn-off", methods=["post"])
 async def turn_off():
-    response_data = {}
-    status_code = None
     try:
         turn_off_bulbs()
-        response_data.update(
-            success=True,
-            message="All bulbs turned off successfully.",
+        return JSONResponse(
+            {
+                "success": True,
+                "message": "All bulbs turned off successfully.",
+            },
+            status_code=HTTP_200_OK,
         )
-        status_code = HTTP_200_OK
-
-    # pylint: disable=broad-except
-    except Exception as e:
-        response_data.update(
-            success=False,
-            message="An error occurred: " + str(e),
+    except Exception:
+        logger.exception("An error occurred while turning off the bulbs.")
+        raise HTTPException(
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while turning off the bulbs.",
         )
-        status_code = HTTP_400_BAD_REQUEST
-
-    return JSONResponse(response_data, status_code=status_code)
 
 
 @rt("/update-presets", methods=["post"])
 async def update():
-    response_data = {}
-    status_code = None
     try:
         update_presets()
-        response_data.update(
-            success=True,
-            message="Presets updated successfully.",
+        return JSONResponse(
+            {
+                "success": True,
+                "message": "Presets updated successfully.",
+            },
+            status_code=HTTP_200_OK,
         )
-        status_code = HTTP_200_OK
-    # pylint: disable=broad-except
-    except Exception as e:
-        response_data.update(
-            success=False,
-            message="An error occurred: " + str(e),
+    except Exception:
+        logger.exception("An error occurred while updating presets.")
+        raise HTTPException(
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while updating presets.",
         )
-        status_code = HTTP_400_BAD_REQUEST
-
-    return JSONResponse(response_data, status_code=status_code)
 
 
-serve(port=5173)
+if __name__ == "__main__":
+    # Set up logging
+    setup_logging()
+    logger = logging.getLogger("LuminaSync")
+
+    # Seed the database
+    seed_db()
+
+    SHOULD_RELOAD = True if "DEBUG" in os.environ else False
+    serve(port=5173, reload=SHOULD_RELOAD)
