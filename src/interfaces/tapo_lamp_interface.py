@@ -4,12 +4,19 @@ This module is an interface for the Tapo L530 lamp.
 
 from PyP100 import PyL530
 
-from utils.color_translate import (hex_to_rgb, hsv_to_rgb, rgb_to_hex,
-                                   rgb_to_hsv, tuple_to_rgb_string)
+from logging_config import get_logger
+from utils.color_translate import (
+    hex_to_rgb,
+    hsv_to_rgb,
+    rgb_to_hex,
+    rgb_to_hsv,
+    tuple_to_rgb_string,
+)
 
 
 class TapoLampInterface:
     def __init__(self, lamp_ip: str, username: str, password: str):
+        self.logger = get_logger(self.__class__)
         self.ip = lamp_ip
         self.bulb = PyL530.L530(lamp_ip, username, password)
         self.deviceProperties = self.getDeviceProperties()
@@ -29,6 +36,7 @@ class TapoLampInterface:
 
     def getDeviceProperties(self):
         deviceProperties: dict = self._getStatus()
+        self.logger.debug(f"Device properties: {deviceProperties}")
         brightness = deviceProperties.get("brightness")
         color_temp = deviceProperties.get("color_temp")
         hue_value = deviceProperties.get("hue") if color_temp == 0 else 0

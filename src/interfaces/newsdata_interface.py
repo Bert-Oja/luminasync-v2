@@ -1,5 +1,7 @@
 import requests
 
+from logging_config import get_logger
+
 
 class NewsDataInterfaceException(Exception):
     pass
@@ -7,6 +9,7 @@ class NewsDataInterfaceException(Exception):
 
 class NewsDataInterface:
     def __init__(self, api_key: str) -> None:
+        self.logger = get_logger(self.__class__)
         self.api_key = api_key
         self.base_url = "https://newsdata.io/api/1/latest"
         self.params = {
@@ -25,9 +28,11 @@ class NewsDataInterface:
         if query:
             self.params["q"] = query
         try:
+            self.logger.info("Fetching news data.")
             response = requests.get(url, params=self.params, timeout=30)
             data = response.json()
             if response.status_code != 200:
+                self.logger.error(f"Error fetching news data: {data['message']}")
                 raise NewsDataInterfaceException(
                     f"Error fetching news data: {data['message']}"
                 )
@@ -47,4 +52,5 @@ class NewsDataInterface:
             return articles
 
         except requests.exceptions.RequestException as e:
+            self.logger.error(f"Error fetching news data: {e}")
             raise NewsDataInterfaceException(f"Error fetching news data: {e}") from e

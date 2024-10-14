@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 
 from dotenv import load_dotenv
@@ -9,6 +10,8 @@ from interfaces.newsdata_interface import NewsDataInterface
 from interfaces.openai_interface import OpenAIInterface
 from interfaces.weather_api_interface import WeatherAPIInterface
 from services.preset_service import create_preset, delete_preset
+
+logger = logging.getLogger("LuminaSync")
 
 
 def update_presets():
@@ -30,12 +33,12 @@ def update_presets():
             preset_dict = preset.to_dict()
             if not preset_dict["protected"]:
                 delete_preset(preset_dict["id"])
-        print("Non-persistent presets deleted successfully.")
+        logger.info("Non-persistent presets deleted successfully.")
 
         # Step 2: Fetch weather data
         weather_interface = WeatherAPIInterface(59.1031, 18.0446)
         weather = weather_interface.fetch_weather_data()
-        print("Weather data fetched successfully.")
+        logger.info("Weather data fetched successfully.")
 
         # Step 3: Fetch local and global news
         newsdata_interface = NewsDataInterface(os.getenv("NEWSDATA_API_KEY"))
@@ -43,7 +46,7 @@ def update_presets():
         newsdata_local = newsdata_interface.fetch_news_data(
             country="se", query="Stockholm"
         )
-        print("News data fetched successfully.")
+        logger.info("News data fetched successfully.")
 
         # Step 4: Prepare data and get emotional responses from OpenAI
         data = {
@@ -62,7 +65,7 @@ def update_presets():
 
         # Step 6: Fetch presets from OpenAI
         presets = openai_interface.get_light_presets(json.dumps(preset_input))
-        print("Presets fetched successfully.")
+        logger.info("Presets fetched successfully.")
 
         # Step 7: Save presets to the database
         for preset in presets.presets:
@@ -70,16 +73,16 @@ def update_presets():
                 preset.to_json()
             )  # Convert JSON string back to dict
             saved_preset = create_preset(preset_json["name"], preset_json["value"])
-            print(f"Preset saved: {json.dumps(saved_preset)}")
+            logger.info(f"Preset saved: {json.dumps(saved_preset)}")
 
-        print("Presets updated successfully.")
+        logger.info("Presets updated successfully.")
         session.close()
 
         return True
     # pylint: disable=broad-except
     except Exception as e:
         session.rollback()
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
     finally:
         session.close()
 

@@ -1,6 +1,7 @@
 """Main module for the application."""
 
 import json
+import logging
 from functools import lru_cache
 from typing import Any
 
@@ -32,8 +33,13 @@ from starlette.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOU
 
 from db.models import Lamp, Preset
 from db.session import get_session, seed_db
+from logging_config import setup_logging
 from services.preset_service import apply_preset, turn_off_bulbs
 from update_presets import update_presets
+
+# Set up logging
+setup_logging()
+logger = logging.getLogger("LuminaSync")
 
 
 # Define a custom StaticFiles class to override MIME types if necessary
