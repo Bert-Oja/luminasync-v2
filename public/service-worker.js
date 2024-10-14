@@ -22,6 +22,23 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
+    const url = new URL(event.request.url);
+
+    // Handle HTML files with a Network-First strategy
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request)
+                .then(async response => {
+                    const cache = await caches.open(CACHE_NAME);
+                    cache.put(event.request, response.clone());
+                    return response;
+                })
+                .catch(() => caches.match(event.request))
+        );
+        return;
+    }
+
+    // Handle other assets with a Cache-First strategy
     event.respondWith(
         caches.match(event.request)
             .then(response => {
@@ -29,6 +46,7 @@ self.addEventListener('fetch', event => {
             })
     );
 });
+
 
 self.addEventListener('activate', event => {
     const cacheWhitelist = [CACHE_NAME];

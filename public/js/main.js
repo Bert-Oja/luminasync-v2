@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (data.success) {
                     console.log('Presets updated successfully', data.message);
                     M.toast({ html: data.message, classes: 'green' });
-                    // Reload the page after updating the presets
+                    // Force reload the page, invalidating the cache
                     location.reload();
                 }
                 else {
