@@ -102,7 +102,7 @@ class OpenAIInterface:
                 )
                 if self._validate_preset_output(output):
                     return output
-            except OpenAIInterflaceResponseValidationException as e:
+            except OpenAIInterfaceException as e:
                 exception = e
         raise OpenAIInterfaceException(
             f"Error generating light presets: {exception}"
@@ -185,8 +185,6 @@ class OpenAIInterface:
             response = completion.choices[0].message.content.strip()
             if response.startswith("VALID"):
                 return True
-            raise OpenAIInterflaceResponseValidationException(
-                f"Error validating output: {response}"
-            )
-        except Exception as e:
+            raise OpenAIInterflaceResponseValidationException(response)
+        except (Exception, OpenAIInterflaceResponseValidationException) as e:
             raise OpenAIInterfaceException(f"Error validating output: {e}") from e
