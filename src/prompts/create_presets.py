@@ -23,11 +23,15 @@ Instructions:
    - Output:
      ```json
      {
-       "name": "unease",
-       "value": [
-         {"type": "color", "setting": "#800000", "brightness": 40},
-         {"type": "color", "setting": "#FF4500", "brightness": 20},
-         {"type": "color", "setting": "#8B0000", "brightness": 60}
+       "presets": [
+         {
+           "name": "unease",
+           "value": [
+             {"type": "color", "setting": "#800000", "brightness": 40},
+             {"type": "color", "setting": "#FF4500", "brightness": 20},
+             {"type": "color", "setting": "#8B0000", "brightness": 60}
+           ]
+         }
        ]
      }
      ```
@@ -37,8 +41,12 @@ Instructions:
    - Output:
      ```json
      {
-       "name": "calm",
-       "value": {"type": "temp", "setting": 3000, "brightness": 50}
+       "presets": [
+         {
+           "name": "calm",
+           "value": {"type": "temp", "setting": 3000, "brightness": 50}
+         }
+       ]
      }
      ```
 

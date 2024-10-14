@@ -162,6 +162,7 @@ async def get():
     try:
         session = get_session()
         presets = session.query(Preset).all()
+        logger.debug(f"Presets: {presets}")
         lamps = session.query(Lamp).all()
         session.close()
 

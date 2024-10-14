@@ -5,7 +5,7 @@ It features methods to generate emotional responses and light presets using the 
 
 import json
 from textwrap import dedent
-from typing import List, Literal, Union
+from typing import List, Literal, Optional
 
 from openai import OpenAI
 from pydantic import BaseModel, Field
@@ -32,26 +32,22 @@ class TempSetting(BaseModel):
 
 
 class Preset(BaseModel):
-    name: str = Field(...)
-    value: Union[TempSetting, List[ColorSetting]]
-
-    def to_json(self):
-        data = self.model_dump()
-        if isinstance(data["value"], list):
-            data["value"] = [item.model_dump() for item in self.value]
-        else:
-            data["value"] = self.value.model_dump()
-        return json.dumps(data, ensure_ascii=False)
+    type: Literal["color", "temp"] = Field(..., description="Type of the preset")
+    name: str = Field(..., description="Name of the preset")
+    # Optional fields for color and temp presets
+    value_color: Optional[List[ColorSetting]] = Field(
+        None, description="List of color settings"
+    )
+    value_temp: Optional[TempSetting] = Field(None, description="Temperature setting")
 
 
 class LightPresetModel(BaseModel):
-    presets: List[Preset] = Field(...)
+    presets: List[Preset]
 
-    def to_json(self):
-        return json.dumps(
-            [preset.model_dump() for preset in self.presets],
-            ensure_ascii=False,
-        )
+
+class ValidationModel(BaseModel):
+    validation: Literal["VALID", "INVALID"] = Field(...)
+    explanation: str = Field(...)
 
 
 class OpenAIInterfaceException(Exception):
@@ -118,7 +114,8 @@ class OpenAIInterface:
         system_message: str,
         user_message: str,
         response_format: type[BaseModel],
-    ) -> str:
+        model: str = "gpt-4o",
+    ) -> BaseModel:
         """
         Generate a message using the OpenAI API.
 
@@ -131,10 +128,10 @@ class OpenAIInterface:
         """
         try:
             completion = self.client.beta.chat.completions.parse(
-                model="gpt-4o",
+                model=model,
                 messages=[
                     {"role": "system", "content": dedent(system_message)},
-                    {"role": "user", "content": user_message},
+                    {"role": "user", "content": dedent(user_message)},
                 ],
                 response_format=response_format,
             )
@@ -157,41 +154,37 @@ class OpenAIInterface:
         schema_json = json.dumps(schema, indent=2)
 
         validation_prompt = f"""
-        Please validate the following output against the provided JSON schema:
+        You are a data validation assistant.
+        Your task is to validate the output of a light preset generation model.
 
-        OUTPUT:
-        {output.model_dump_json(indent=2)}
-        
+        You will be given the output of the model that you validate against a JSON schema specified below.
+
         JSON SCHEMA:
         {schema_json}
 
-        Ensure that:
-        1. The output adheres to the specified schema.
-          - When the type is "temp", the setting should be an integer value between 2700 and 6500.
-          - When the type is "color", the setting should be a HEX value.
-          - The brightness should be an integer value between 0 and 100.
-        2. The content is appropriate and relevant.
-        3. There are no logical inconsistencies or errors.
+        Follow these steps carefully before providing a final answer:
+        1. Internally review the output in detail and validate whether it fully adheres to the specified schema:
+        - When the type is "temp", the setting should be an integer value between 2700 and 6500.
+        - When the type is "color", the setting should be a HEX value.
+        - The brightness should be an integer value between 0 and 100.
+        2. Make sure there are no contradictions or logical errors in the output. Each evaluation should result in a clear, consistent conclusion.
+        3. Consider all validation rules before formulating an answer to ensure there are no conflicting assessments.
+        4. Double-check the conclusions and explanations for consistency and accuracy before providing a response.
+        5. Only respond once you are certain of the final assessment.
 
-        Respond with 'VALID' if the output is correct, or 'INVALID' followed by a very brief explanation of only the errors.
+        Your output should either be 'VALID' or 'INVALID' followed by a clear, concise explanation of the issues. 
+        Ensure that your explanation is logically sound and free from contradictions. If the output is correct, do not list any errors.
         """
+
         try:
-            completion = self.client.chat.completions.create(
+            response: ValidationModel = self._get_message(
+                validation_prompt,
+                output.model_dump_json(indent=2),
+                ValidationModel,
                 model="gpt-4o-mini",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are a data validation assistant.",
-                    },
-                    {"role": "user", "content": validation_prompt},
-                ],
-                temperature=0,
-                max_tokens=500,
             )
-            response = completion.choices[0].message.content.strip()
-            if response.startswith("VALID"):
+            if response.validation == "VALID":
                 return True
             raise OpenAIInterflaceResponseValidationException(response)
         except (Exception, OpenAIInterflaceResponseValidationException) as e:
-            self.logger.error(f"Error validating output: {e}")
             raise OpenAIInterfaceException(f"Error validating output: {e}") from e
