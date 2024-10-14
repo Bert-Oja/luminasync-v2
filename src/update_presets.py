@@ -24,16 +24,9 @@ def update_presets():
     """
     load_dotenv()
 
+    session = get_session()
     try:
-        session = get_session()
-
         # Step 1: Clear non-persistent presets
-        presets = session.query(Preset).all()
-        for preset in presets:
-            preset_dict = preset.to_dict()
-            if not preset_dict["protected"]:
-                delete_preset(preset_dict["id"])
-        logger.info("Non-persistent presets deleted successfully.")
 
         # Step 2: Fetch weather data
         weather_interface = WeatherAPIInterface(59.1031, 18.0446)
@@ -67,19 +60,36 @@ def update_presets():
         presets = openai_interface.get_light_presets(json.dumps(preset_input))
         logger.info("Presets fetched successfully.")
 
+        old_presets = session.query(Preset).all()
+        for old_preset in old_presets:
+            preset_dict = old_preset.to_dict()
+            if not preset_dict["protected"]:
+                delete_preset(preset_dict["id"])
+        logger.info("Non-persistent presets deleted successfully.")
+
         # Step 7: Save presets to the database
+        logger.debug(f"Presets: {presets.model_dump_json()}")
+
         for preset in presets.presets:
-            preset_json = json.loads(
-                preset.to_json()
-            )  # Convert JSON string back to dict
-            saved_preset = create_preset(preset_json["name"], preset_json["value"])
+            preset_data = preset.model_dump()
+
+            # Determine which value field is populated based on the type
+            if preset_data["type"] == "color":
+                value = preset_data.get("value_color")
+            elif preset_data["type"] == "temp":
+                value = preset_data.get("value_temp")
+            else:
+                logger.error(f"Unknown preset type: {preset_data['type']}")
+                continue  # Skip unknown types
+
+            # Save to the database
+            saved_preset = create_preset(preset_data["name"], value)
             logger.info(f"Preset saved: {json.dumps(saved_preset)}")
 
         logger.info("Presets updated successfully.")
         session.close()
 
         return True
-    # pylint: disable=broad-except
     except Exception as e:
         session.rollback()
         logger.error(f"An error occurred: {e}")

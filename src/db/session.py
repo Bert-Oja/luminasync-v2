@@ -81,7 +81,7 @@ def seed_db():
                 logger.debug(f"Preset {preset_data['name']} already exists.")
 
         session.commit()
-        logger.info("Database seeding completed. How the hee-haw did you get here?")
+        logger.info("Database seeding completed.")
         _db_seeded = True
     except SQLAlchemyError as e:
         session.rollback()
